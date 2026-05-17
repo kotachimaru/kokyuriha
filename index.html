@@ -473,9 +473,9 @@ html, body {
 
   <div class="login-box">
     <label>アクセスコードを入力</label>
-    <input type="tel" id="code-input" placeholder="00000000"
-      maxlength="8" autocomplete="off" inputmode="numeric"
-      oninput="formatCode(this)">
+    <input type="text" id="code-input" placeholder="XXXXXXXX"
+      maxlength="20" autocomplete="off" autocapitalize="off"
+      oninput="onLoginInput(this)">
     <button class="btn btn-primary" onclick="submitCode()">ログイン</button>
     <div class="login-error" id="login-error"></div>
   </div>
@@ -661,28 +661,39 @@ function showScreen(id) {
 // =====================================================
 // ログイン
 // =====================================================
-function formatCode(input) {
-  input.value = input.value.replace(/[^0-9]/g, '');
+function onLoginInput(el) {
+  if (!el.value.includes('@')) {
+    const pos = el.selectionStart;
+    el.value = el.value.replace(/[^A-Za-z0-9]/g, '').toUpperCase();
+    try { el.setSelectionRange(pos, pos); } catch(e) {}
+  }
 }
 
 async function submitCode() {
-  const code = document.getElementById('code-input').value.trim();
+  const raw = document.getElementById('code-input').value.trim();
   const errEl = document.getElementById('login-error');
   errEl.textContent = '';
 
-  if (!code || code.length < 4) {
-    errEl.textContent = 'コードを入力してください';
+  if (!raw || raw.length < 4) {
+    errEl.textContent = 'コードまたはメールアドレスを入力してください';
     return;
   }
 
   // Firebase未設定の場合はデモモードへ
   if (!window._db) {
     showToast('Firebase未設定のため、デモモードで起動します');
-    loginSuccess(code, false);
+    loginSuccess(raw, false);
     return;
   }
 
-  // Firebase でコード確認
+  // メールアドレス判定 → サブスクチェック
+  if (raw.includes('@')) {
+    await submitEmail(raw.toLowerCase(), errEl);
+    return;
+  }
+
+  // コードログイン
+  const code = raw.toUpperCase();
   try {
     const docRef = window._fsDoc(window._db, 'kokyuriha_codes', code);
     const snap = await window._fsGetDoc(docRef);
@@ -694,6 +705,31 @@ async function submitCode() {
   } catch(e) {
     console.error(e);
     errEl.textContent = 'ネットワークエラー。オフラインの場合はデモ版をお試しください。';
+  }
+}
+
+async function submitEmail(email, errEl) {
+  try {
+    const docRef = window._fsDoc(window._db, 'kokyuriha_subscribers', email);
+    const snap = await window._fsGetDoc(docRef);
+    if (!snap.exists()) {
+      errEl.textContent = 'このメールアドレスの登録が見つかりません。月額プランにご登録ください。';
+      return;
+    }
+    const data = snap.data();
+    if (data.status !== 'active') {
+      errEl.textContent = 'サブスクリプションが有効ではありません。お支払い状況をご確認ください。';
+      return;
+    }
+    const expiresAt = data.expiresAt?.toDate ? data.expiresAt.toDate() : new Date(data.expiresAt);
+    if (expiresAt < new Date()) {
+      errEl.textContent = 'サブスクリプションの有効期限が切れています。';
+      return;
+    }
+    loginSuccess(email, false);
+  } catch(e) {
+    console.error(e);
+    errEl.textContent = 'ネットワークエラー。接続を確認してください。';
   }
 }
 
