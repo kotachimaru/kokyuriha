@@ -4192,7 +4192,7 @@ const QUESTIONS = [
       "pH 7.48、PaCO₂ 40mmHg、HCO₃⁻ 30mEq/L"
     ],
     "answer": 2,
-    "explanation": "呼吸性アシドーシスはpH低下（<7.35）＋PaCO₂上昇（>45mmHg）が特徴。選択肢2はpH 7.30（酸性）、PaCO₂ 55mmHg（上昇）、HCO₃⁻は代謝性代償でわずかに上昇しており呼吸性アシドーシスの所見である。"
+    "explanation": "呼吸性アシドーシスはpH低下（<7.35）＋PaCO₂上昇（>45mmHg）が特徴。pH 7.30（酸性）・PaCO₂ 55mmHg（上昇）・HCO₃⁻ 26mEq/Lの組み合わせが該当する。HCO₃⁻は代謝性代償でわずかに上昇しており、呼吸性アシドーシスの所見である。"
   },
   {
     "id": 263,
